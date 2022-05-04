@@ -10,7 +10,7 @@ import java.nio.file.Path;
 @Slf4j
 public class FileHandler extends SimpleChannelInboundHandler<AbstractMessage> {
 
-    private final Path serverDirectory = Path.of("cloudFiles");
+    private final Path serverDirectory = Path.of("cloud-server/cloudFiles");
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {

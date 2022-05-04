@@ -21,20 +21,20 @@ public class ClientApp extends Application {
         getPrimaryStage().show();
     }
 
-    @Override
-    public void init() {
-        INSTANCE = this;
-    }
-
     private void initializePrimaryStage() throws IOException {
         primaryStageLoader = new FXMLLoader();
-        primaryStageLoader.setLocation(getClass().getResource("com.buzas.cloud.application/main.fxml"));
+        primaryStageLoader.setLocation(getClass().getResource("/main.fxml"));
 
-        Parent primaryWindow = primaryStageLoader.load();
-        this.primaryStage.setScene(new Scene(primaryWindow));
+        Parent primaryStage = primaryStageLoader.load();
+        this.primaryStage.setScene(new Scene(primaryStage));
     }
 
     public Stage getPrimaryStage() {
         return this.primaryStage;
+    }
+
+    @Override
+    public void init() {
+        INSTANCE = this;
     }
 }
