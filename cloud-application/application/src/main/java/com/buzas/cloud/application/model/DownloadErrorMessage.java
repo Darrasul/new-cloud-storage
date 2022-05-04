@@ -1,4 +1,4 @@
-package com.buzas.cloud.model;
+package com.buzas.cloud.application.model;
 
 public class DownloadErrorMessage extends AbstractMessage{
     @Override
