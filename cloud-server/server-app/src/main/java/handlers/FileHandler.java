@@ -1,6 +1,6 @@
 package handlers;
 
-import com.buzas.cloud.model.*;
+import com.buzas.cloud.application.model.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;

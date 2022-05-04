@@ -10,6 +10,7 @@ module com.buzas.cloud.application {
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
+    requires io.netty.codec;
 
     opens com.buzas.cloud.application to javafx.fxml;
     exports com.buzas.cloud.application;
