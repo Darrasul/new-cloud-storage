@@ -6,7 +6,8 @@ public enum MessageType {
     DELETE("delete"),
     DOWNLOAD("download"),
     DELIVER("deliver"),
-    ERROR_DOWNLOAD("error_download");
+    ERROR_DOWNLOAD("error_download"),
+    REFRESH("refresh");
 
     private final String name;
 

@@ -137,6 +137,6 @@ public class ClientController implements Initializable {
 
     public void pressRefreshButton(ActionEvent actionEvent) throws IOException {
         readUserFiles();
-        clientNetwork.write(new ListMessage(serverDirectory));
+        clientNetwork.write(new RefreshMessage());
     }
 }
