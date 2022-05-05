@@ -24,6 +24,9 @@ public class FileHandler extends SimpleChannelInboundHandler<AbstractMessage> {
             Files.write(serverDirectory.resolve(fileMessage.getName()), fileMessage.getBytes());
             ctx.write(new ListMessage(serverDirectory));
         }
+        if (message instanceof RefreshMessage refreshMessage){
+            ctx.write(new ListMessage(serverDirectory));
+        }
         if (message instanceof DeleteMessage deleteMessage){
             Files.delete(serverDirectory.resolve(deleteMessage.getName()));
             ctx.write(new ListMessage(serverDirectory));
