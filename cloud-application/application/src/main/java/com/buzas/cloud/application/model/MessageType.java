@@ -7,7 +7,9 @@ public enum MessageType {
     DOWNLOAD("download"),
     DELIVER("deliver"),
     ERROR_DOWNLOAD("error_download"),
-    REFRESH("refresh");
+    REFRESH("refresh"),
+    FILE_INFO("file_info"),
+    INFO_DELIVER("info_deliver");
 
     private final String name;
 

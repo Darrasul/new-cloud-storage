@@ -16,9 +16,11 @@
                         </Menu>
                         <Menu mnemonicParsing="false" text="Edit Files">
                             <items>
-                                <MenuItem fx:id="deleteUserFile" mnemonicParsing="false" onAction="#pressDeleteUserFile" text="Delete User File" />
-                                <MenuItem fx:id="deleteServerFile" mnemonicParsing="false" onAction="#pressDeleteServerFile" text="Delete Server File" />
                                 <MenuItem fx:id="refreshButton" mnemonicParsing="false" onAction="#pressRefreshButton" text="Refresh File Lists" />
+                        <MenuItem mnemonicParsing="false" onAction="#pressedUserFileInfo" text="User File Info" />
+                                <MenuItem fx:id="deleteUserFile" mnemonicParsing="false" onAction="#pressDeleteUserFile" text="Delete User File" />
+                        <MenuItem mnemonicParsing="false" onAction="#pressedServerFileInfo" text="Server File Info" />
+                                <MenuItem fx:id="deleteServerFile" mnemonicParsing="false" onAction="#pressDeleteServerFile" text="Delete Server File" />
                             </items>
                         </Menu>
                         <Menu mnemonicParsing="false" text="Help">

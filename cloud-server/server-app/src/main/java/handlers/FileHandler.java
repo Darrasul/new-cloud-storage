@@ -39,6 +39,10 @@ public class FileHandler extends SimpleChannelInboundHandler<AbstractMessage> {
                 ctx.write(new DownloadErrorMessage());
             }
         }
+        if (message instanceof FileInfoMessage fileInfoMessage){
+            Path requestedFile = Path.of(fileInfoMessage.getName());
+            ctx.write(new InfoDeliverMessage(serverDirectory.resolve(requestedFile)));
+        }
         ctx.flush();
     }
 }
