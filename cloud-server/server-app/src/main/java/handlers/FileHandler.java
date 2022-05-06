@@ -10,7 +10,7 @@ import java.nio.file.Path;
 @Slf4j
 public class FileHandler extends SimpleChannelInboundHandler<AbstractMessage> {
 
-    private final Path serverDirectory = Path.of("cloud-server/cloudFiles");
+    private Path serverDirectory = Path.of("cloud-server/cloudFiles");
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -33,15 +33,28 @@ public class FileHandler extends SimpleChannelInboundHandler<AbstractMessage> {
         }
         if (message instanceof DownloadMessage downloadMessage){
             Path downloadedFilePath = Path.of(serverDirectory.resolve(downloadMessage.getName()).toString());
-            if (Files.exists(downloadedFilePath)) {
-                ctx.write(new DeliverMessage(downloadedFilePath));
-            } else if (!Files.exists(downloadedFilePath)){
-                ctx.write(new DownloadErrorMessage());
+            if (!Files.isDirectory(downloadedFilePath)){
+                if (Files.exists(downloadedFilePath)) {
+                    ctx.write(new DeliverMessage(downloadedFilePath));
+                } else if (!Files.exists(downloadedFilePath)){
+                    ctx.write(new DownloadErrorMessage("No such file in a server"));
+                }
+            } else {
+                ctx.write(new DownloadErrorMessage("Its a directory, you can't copy it"));
             }
         }
         if (message instanceof FileInfoMessage fileInfoMessage){
             Path requestedFile = Path.of(fileInfoMessage.getName());
             ctx.write(new InfoDeliverMessage(serverDirectory.resolve(requestedFile)));
+        }
+        if (message instanceof DirectoryRequestMessage requestMessage){
+            Path targetPath = serverDirectory.resolve(requestMessage.getName());
+            if (Files.isDirectory(targetPath)){
+                serverDirectory = targetPath;
+                ctx.write(new DirectoryAnswerMessage(true, Path.of(requestMessage.getName())));
+            } else {
+                ctx.write(new DirectoryAnswerMessage(false, serverDirectory));
+            }
         }
         ctx.flush();
     }

@@ -17,6 +17,8 @@
                         <Menu mnemonicParsing="false" text="Edit Files">
                             <items>
                                 <MenuItem fx:id="refreshButton" mnemonicParsing="false" onAction="#pressRefreshButton" text="Refresh File Lists" />
+                        <MenuItem mnemonicParsing="false" onAction="#pressUserFolder" text="Open User Folder" />
+                        <MenuItem mnemonicParsing="false" onAction="#pressServerFolder" text="Open Server Folder" />
                         <MenuItem mnemonicParsing="false" onAction="#pressedUserFileInfo" text="User File Info" />
                                 <MenuItem fx:id="deleteUserFile" mnemonicParsing="false" onAction="#pressDeleteUserFile" text="Delete User File" />
                         <MenuItem mnemonicParsing="false" onAction="#pressedServerFileInfo" text="Server File Info" />

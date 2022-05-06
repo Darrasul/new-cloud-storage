@@ -22,7 +22,9 @@ public class Dialogs {
     }
 
     public enum ErrorDialog {
-        DOWNLOADING_FILES_ERROR("Error with downloading files from server");
+        DOWNLOADING_FILES_ERROR("Error with downloading files from server"),
+        NOT_A_DIRECTORY("Selected item is not a directory"),
+        CANT_COPY_DIRECTORY("You cant copy directory");
 
         private static final String TITLE = "Error!";
         private static final String TYPE = TITLE;

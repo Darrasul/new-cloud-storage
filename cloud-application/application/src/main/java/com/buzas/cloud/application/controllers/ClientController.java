@@ -10,6 +10,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ListView;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -19,7 +20,7 @@ import java.util.ResourceBundle;
 
 public class ClientController implements Initializable, Closeable {
 
-    private final Path serverDirectory = Path.of("../cloud-server/cloudFiles");
+    private Path serverDirectory = Path.of("../cloud-server/cloudFiles");
     private Path clientDirectory;
     private ClientApp application;
     public ListView<String> leftNameplate;
@@ -35,11 +36,19 @@ public class ClientController implements Initializable, Closeable {
                 if (message instanceof DownloadErrorMessage){
 //                    Случай прерывания чтения
                     System.out.println("ERROR WITH DOWNLOAD!");
-                    Dialogs.ErrorDialog.DOWNLOADING_FILES_ERROR.show();
+                    String error = ((DownloadErrorMessage) message).getMessage();
+                    if (error.equals("Its a directory, you can't copy it")){
+                        System.out.println(error);
+                    }
+                    if (error.equals("No such file in a server")){
+                        System.out.println(error);
+                        Dialogs.ErrorDialog.DOWNLOADING_FILES_ERROR.show();
+                    }
                 }
                 if (message instanceof ListMessage listMessage){
                     System.out.println("read messages");
                     serverView.getItems().clear();
+                    serverView.getItems().add("..");
                     serverView.getItems().addAll(listMessage.getFiles());
                 }
                 if (message instanceof DeliverMessage deliverMessage){
@@ -53,6 +62,16 @@ public class ClientController implements Initializable, Closeable {
                         readUserFiles();
                     } catch (Exception e){
                         e.printStackTrace();
+                    }
+                }
+                if (message instanceof DirectoryAnswerMessage answerMessage){
+                    if (answerMessage.isDirectory()){
+                        serverDirectory = serverDirectory.resolve(answerMessage.getName());
+                        serverView.getItems().clear();
+                        clientNetwork.write(new RefreshMessage());
+                    } else {
+                        System.out.println("Not a directory. Да, оно и здесь не дает использовать окно ошибки. Опять не видит сцену");
+//                        Dialogs.ErrorDialog.NOT_A_DIRECTORY.show();
                     }
                 }
                 if (message instanceof InfoDeliverMessage infoDeliverMessage){
@@ -80,6 +99,7 @@ public class ClientController implements Initializable, Closeable {
 
     private void readUserFiles() throws IOException {
         userView.getItems().clear();
+        userView.getItems().add("..");
         userView.getItems().addAll(receiveUserFilesNames());
     }
 
@@ -112,7 +132,12 @@ public class ClientController implements Initializable, Closeable {
 
     public void fromUser(ActionEvent actionEvent) throws Exception {
         String fileName = userView.getSelectionModel().getSelectedItem();
-        clientNetwork.write(new FileMessage(clientDirectory.resolve(fileName)));
+        Path filePath = clientDirectory.resolve(fileName);
+        if (!Files.isDirectory(filePath)){
+            clientNetwork.write(new FileMessage(filePath));
+        } else {
+            Dialogs.ErrorDialog.CANT_COPY_DIRECTORY.show();
+        }
     }
 
     public void fromServer(ActionEvent actionEvent) throws Exception {
@@ -130,15 +155,28 @@ public class ClientController implements Initializable, Closeable {
         String userFile = userView.getSelectionModel().getSelectedItem();
         Path userPath = clientDirectory.resolve(userFile);
         if (Files.exists(userPath)){
-            System.out.println("File at path: " + userPath + " deleted");
-            Files.delete(userPath);
+            if (Files.isDirectory(userPath)){
+                File dir = new File(String.valueOf(userPath));
+                File[] filesInDir = dir.listFiles();
+                if (filesInDir.length <= 0){
+                    Files.delete(userPath);
+                } else {
+                    for (File file : filesInDir) {
+                        file.delete();
+                    }
+                    Files.delete(userPath);
+                }
+            } else {
+                System.out.println("File at path: " + userPath + " deleted");
+                Files.delete(userPath);
+            }
             readUserFiles();
         }
     }
 
     public void pressDeleteServerFile(ActionEvent actionEvent) throws IOException {
         String serverFile = serverView.getSelectionModel().getSelectedItem();
-        Path serverPath = serverDirectory.resolve(serverFile);
+        Path serverPath = Path.of(serverFile);
         clientNetwork.write(new DeleteMessage(serverPath));
     }
 
@@ -205,5 +243,29 @@ public class ClientController implements Initializable, Closeable {
         alert.setHeaderText(type);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    public void pressUserFolder(ActionEvent actionEvent) throws IOException {
+        String dots = "..";
+        String target = userView.getSelectionModel().getSelectedItem();
+        Path targetPath = clientDirectory.resolve(target);
+        if (target.equals(dots)){
+            clientDirectory = Path.of("cloud-application","userFiles");
+        }
+        if (Files.isDirectory(targetPath)){
+            clientDirectory = targetPath;
+        } else {
+            Dialogs.ErrorDialog.NOT_A_DIRECTORY.show();
+        }
+        readUserFiles();
+    }
+
+    public void pressServerFolder(ActionEvent actionEvent) throws IOException {
+        String target = serverView.getSelectionModel().getSelectedItem();
+        if (target.equals("..")){
+            clientNetwork.write(new DirectoryRequestMessage(".."));
+        }
+        Path targetPath = serverDirectory.resolve(target);
+        clientNetwork.write(new DirectoryRequestMessage(targetPath));
     }
 }
