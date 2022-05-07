@@ -36,7 +36,7 @@
         </HBox>
         <HBox layoutY="20.0" prefHeight="442.0" prefWidth="702.0">
             <children>
-                <ListView fx:id="userView" prefHeight="478.0" prefWidth="300.0" />
+                <ListView fx:id="userView" onContextMenuRequested="#contextMenuOverUser" prefHeight="478.0" prefWidth="300.0" />
                 <VBox alignment="CENTER" prefHeight="478.0" prefWidth="102.0">
                     <children>
                         <Button fx:id="fromUserButton" mnemonicParsing="false" onAction="#fromUser" text="-&gt;" />
@@ -44,7 +44,7 @@
                         <Button fx:id="fromServerButton" mnemonicParsing="false" onAction="#fromServer" text="&lt;-" />
                     </children>
                 </VBox>
-                <ListView fx:id="serverView" prefHeight="478.0" prefWidth="300.0" />
+                <ListView fx:id="serverView" onContextMenuRequested="#contextMenuOverServer" prefHeight="478.0" prefWidth="300.0" />
             </children>
         </HBox>
         <ListView fx:id="leftNameplate" layoutY="462.0" prefHeight="26.0" prefWidth="300.0" />

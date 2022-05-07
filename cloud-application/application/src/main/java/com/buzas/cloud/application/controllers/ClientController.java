@@ -5,9 +5,11 @@ import com.buzas.cloud.application.dialogs.Dialogs;
 import com.buzas.cloud.application.model.*;
 import com.buzas.cloud.application.network.ClientNetwork;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
+import javafx.scene.input.ContextMenuEvent;
+import javafx.scene.layout.TilePane;
 
 import java.io.Closeable;
 import java.io.File;
@@ -28,6 +30,20 @@ public class ClientController implements Initializable, Closeable {
     private ClientNetwork clientNetwork;
     public ListView<String> userView;
     public ListView<String> serverView;
+
+    Label userLabel = new Label();
+    ContextMenu userMenu = new ContextMenu();
+    MenuItem userDeleteFile = new MenuItem("Delete file");
+    MenuItem userOpenFolder = new MenuItem("Open folder");
+    MenuItem userGetInfo = new MenuItem("Info");
+    MenuItem userRefresh = new MenuItem("Refresh list");
+
+    Label serverLabel = new Label();
+    ContextMenu serverMenu = new ContextMenu();
+    MenuItem serverDeleteFile = new MenuItem("Delete file");
+    MenuItem serverOpenFolder = new MenuItem("Open folder");
+    MenuItem serverGetInfo = new MenuItem("Info");
+    MenuItem serverRefresh = new MenuItem("Refresh list");
 
     private void readCommands() {
         try {
@@ -130,6 +146,70 @@ public class ClientController implements Initializable, Closeable {
         }
     }
 
+    private void deleteUserFiles(String userFile) throws IOException {
+        Path userPath = clientDirectory.resolve(userFile);
+        if (Files.exists(userPath)){
+            if (Files.isDirectory(userPath)){
+                File dir = new File(String.valueOf(userPath));
+                File[] filesInDir = dir.listFiles();
+                if (filesInDir.length <= 0){
+                    Files.delete(userPath);
+                } else {
+                    for (File file : filesInDir) {
+                        file.delete();
+                    }
+                    Files.delete(userPath);
+                }
+            } else {
+                System.out.println("File at path: " + userPath + " deleted");
+                Files.delete(userPath);
+            }
+            readUserFiles();
+        }
+    }
+
+    private void userInfoShow(String fileToRead) throws IOException {
+        Path filePath = clientDirectory.resolve(fileToRead);
+        String stringPath = filePath.toString();
+        String fileSize = String.valueOf(Files.size(filePath));
+        String fileLastUpdateFull = String.valueOf(Files.getLastModifiedTime(filePath));
+        String fileLastUpdateDate = fileLastUpdateFull.substring(0, 10);
+        String fileLastUpdateHour = fileLastUpdateFull.substring(12, 19);
+        infoDialogInit(fileToRead, stringPath, fileSize, fileLastUpdateDate, fileLastUpdateHour, false);
+    }
+
+    private void openUserFolder(String target) throws IOException {
+        String dots = "..";
+        Path targetPath = clientDirectory.resolve(target);
+        if (target.equals(dots)){
+            clientDirectory = Path.of("cloud-application","userFiles");
+        }
+        if (Files.isDirectory(targetPath)){
+            clientDirectory = targetPath;
+        } else {
+            Dialogs.ErrorDialog.NOT_A_DIRECTORY.show();
+        }
+        readUserFiles();
+    }
+
+    private void openServerFolder(String target) throws IOException {
+        if (target.equals("..")){
+            clientNetwork.write(new DirectoryRequestMessage(".."));
+        }
+        Path targetPath = serverDirectory.resolve(target);
+        clientNetwork.write(new DirectoryRequestMessage(targetPath));
+    }
+
+    private void deleteServerFile(String serverFile) throws IOException {
+        Path serverPath = Path.of(serverFile);
+        clientNetwork.write(new DeleteMessage(serverPath));
+    }
+
+    private void serverInfoShow(String fileToRead) throws IOException {
+        Path filePath = Path.of(fileToRead);
+        clientNetwork.write(new FileInfoMessage(filePath));
+    }
+
     public void fromUser(ActionEvent actionEvent) throws Exception {
         String fileName = userView.getSelectionModel().getSelectedItem();
         Path filePath = clientDirectory.resolve(fileName);
@@ -153,31 +233,12 @@ public class ClientController implements Initializable, Closeable {
 
     public void pressDeleteUserFile(ActionEvent actionEvent) throws IOException {
         String userFile = userView.getSelectionModel().getSelectedItem();
-        Path userPath = clientDirectory.resolve(userFile);
-        if (Files.exists(userPath)){
-            if (Files.isDirectory(userPath)){
-                File dir = new File(String.valueOf(userPath));
-                File[] filesInDir = dir.listFiles();
-                if (filesInDir.length <= 0){
-                    Files.delete(userPath);
-                } else {
-                    for (File file : filesInDir) {
-                        file.delete();
-                    }
-                    Files.delete(userPath);
-                }
-            } else {
-                System.out.println("File at path: " + userPath + " deleted");
-                Files.delete(userPath);
-            }
-            readUserFiles();
-        }
+        deleteUserFiles(userFile);
     }
 
     public void pressDeleteServerFile(ActionEvent actionEvent) throws IOException {
         String serverFile = serverView.getSelectionModel().getSelectedItem();
-        Path serverPath = Path.of(serverFile);
-        clientNetwork.write(new DeleteMessage(serverPath));
+        deleteServerFile(serverFile);
     }
 
     public void pressAbout(ActionEvent actionEvent) {
@@ -197,19 +258,12 @@ public class ClientController implements Initializable, Closeable {
 
     public void pressedUserFileInfo(ActionEvent actionEvent) throws IOException {
         String fileToRead = userView.getSelectionModel().getSelectedItem();
-        Path filePath = clientDirectory.resolve(fileToRead);
-        String stringPath = filePath.toString();
-        String fileSize = String.valueOf(Files.size(filePath));
-        String fileLastUpdateFull = String.valueOf(Files.getLastModifiedTime(filePath));
-        String fileLastUpdateDate = fileLastUpdateFull.substring(0, 10);
-        String fileLastUpdateHour = fileLastUpdateFull.substring(12, 19);
-        infoDialogInit(fileToRead, stringPath, fileSize, fileLastUpdateDate, fileLastUpdateHour, false);
+        userInfoShow(fileToRead);
     }
 
     public void pressedServerFileInfo(ActionEvent actionEvent) throws IOException {
         String fileToRead = serverView.getSelectionModel().getSelectedItem();
-        Path filePath = Path.of(fileToRead);
-        clientNetwork.write(new FileInfoMessage(filePath));
+        serverInfoShow(fileToRead);
     }
 
     private void infoDialogInit(String fileToRead, String filePath, String fileSize, String fileLastUpdateDate,
@@ -246,26 +300,116 @@ public class ClientController implements Initializable, Closeable {
     }
 
     public void pressUserFolder(ActionEvent actionEvent) throws IOException {
-        String dots = "..";
         String target = userView.getSelectionModel().getSelectedItem();
-        Path targetPath = clientDirectory.resolve(target);
-        if (target.equals(dots)){
-            clientDirectory = Path.of("cloud-application","userFiles");
-        }
-        if (Files.isDirectory(targetPath)){
-            clientDirectory = targetPath;
-        } else {
-            Dialogs.ErrorDialog.NOT_A_DIRECTORY.show();
-        }
-        readUserFiles();
+        openUserFolder(target);
     }
 
     public void pressServerFolder(ActionEvent actionEvent) throws IOException {
         String target = serverView.getSelectionModel().getSelectedItem();
-        if (target.equals("..")){
-            clientNetwork.write(new DirectoryRequestMessage(".."));
-        }
-        Path targetPath = serverDirectory.resolve(target);
-        clientNetwork.write(new DirectoryRequestMessage(targetPath));
+        openServerFolder(target);
+    }
+
+    public void contextMenuOverUser(ContextMenuEvent contextMenuEvent) {
+        String selectedItem = userView.getSelectionModel().getSelectedItem();
+        userGetInfo.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+                    userInfoShow(selectedItem);
+                } catch (IOException e) {
+                    System.err.println("Cant show item info");
+                    e.printStackTrace();
+                }
+            }
+        });
+        userDeleteFile.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+                    deleteUserFiles(selectedItem);
+                } catch (IOException e) {
+                    System.err.println("Cant delete item");
+                    e.printStackTrace();
+                }
+            }
+        });
+        userOpenFolder.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+                    openUserFolder(selectedItem);
+                } catch (IOException e) {
+                    System.err.println("Cant open user folder");
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        userRefresh.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+                    readUserFiles();
+                } catch (IOException e) {
+                    System.err.println("Cant refresh user files");
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        userLabel.setContextMenu(userMenu);
+        userMenu.getItems().addAll(userGetInfo, userOpenFolder, userDeleteFile, userRefresh);
+        userView.setContextMenu(userMenu);
+    }
+
+    public void contextMenuOverServer(ContextMenuEvent contextMenuEvent) {
+        String selectedItem = serverView.getSelectionModel().getSelectedItem();
+        serverGetInfo.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+                    serverInfoShow(selectedItem);
+                } catch (IOException e) {
+                    System.err.println("Cant show info for server item");
+                    e.printStackTrace();
+                }
+            }
+        });
+        serverOpenFolder.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+                    openServerFolder(selectedItem);
+                } catch (IOException e) {
+                    System.err.println("Cant open server folder");
+                    e.printStackTrace();
+                }
+            }
+        });
+        serverDeleteFile.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+                    deleteServerFile(selectedItem);
+                } catch (IOException e) {
+                    System.err.println("Cant delete server file");
+                    e.printStackTrace();
+                }
+            }
+        });
+        serverRefresh.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+                    clientNetwork.write(new RefreshMessage());
+                } catch (IOException e) {
+                    System.err.println("Cant refresh server list");
+                    e.printStackTrace();
+                }
+            }
+        });
+        serverLabel.setContextMenu(serverMenu);
+        serverMenu.getItems().addAll(serverGetInfo, serverOpenFolder, serverDeleteFile, serverRefresh);
+        serverView.setContextMenu(serverMenu);
     }
 }
