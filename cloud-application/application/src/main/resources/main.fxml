@@ -16,9 +16,13 @@
                         </Menu>
                         <Menu mnemonicParsing="false" text="Edit Files">
                             <items>
-                                <MenuItem fx:id="deleteUserFile" mnemonicParsing="false" onAction="#pressDeleteUserFile" text="Delete User File" />
-                                <MenuItem fx:id="deleteServerFile" mnemonicParsing="false" onAction="#pressDeleteServerFile" text="Delete Server File" />
                                 <MenuItem fx:id="refreshButton" mnemonicParsing="false" onAction="#pressRefreshButton" text="Refresh File Lists" />
+                        <MenuItem mnemonicParsing="false" onAction="#pressUserFolder" text="Open User Folder" />
+                        <MenuItem mnemonicParsing="false" onAction="#pressServerFolder" text="Open Server Folder" />
+                        <MenuItem mnemonicParsing="false" onAction="#pressedUserFileInfo" text="User File Info" />
+                                <MenuItem fx:id="deleteUserFile" mnemonicParsing="false" onAction="#pressDeleteUserFile" text="Delete User File" />
+                        <MenuItem mnemonicParsing="false" onAction="#pressedServerFileInfo" text="Server File Info" />
+                                <MenuItem fx:id="deleteServerFile" mnemonicParsing="false" onAction="#pressDeleteServerFile" text="Delete Server File" />
                             </items>
                         </Menu>
                         <Menu mnemonicParsing="false" text="Help">
@@ -32,7 +36,7 @@
         </HBox>
         <HBox layoutY="20.0" prefHeight="442.0" prefWidth="702.0">
             <children>
-                <ListView fx:id="userView" prefHeight="478.0" prefWidth="300.0" />
+                <ListView fx:id="userView" onContextMenuRequested="#contextMenuOverUser" prefHeight="478.0" prefWidth="300.0" />
                 <VBox alignment="CENTER" prefHeight="478.0" prefWidth="102.0">
                     <children>
                         <Button fx:id="fromUserButton" mnemonicParsing="false" onAction="#fromUser" text="-&gt;" />
@@ -40,7 +44,7 @@
                         <Button fx:id="fromServerButton" mnemonicParsing="false" onAction="#fromServer" text="&lt;-" />
                     </children>
                 </VBox>
-                <ListView fx:id="serverView" prefHeight="478.0" prefWidth="300.0" />
+                <ListView fx:id="serverView" onContextMenuRequested="#contextMenuOverServer" prefHeight="478.0" prefWidth="300.0" />
             </children>
         </HBox>
         <ListView fx:id="leftNameplate" layoutY="462.0" prefHeight="26.0" prefWidth="300.0" />
