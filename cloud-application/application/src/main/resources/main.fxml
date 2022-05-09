@@ -36,7 +36,15 @@
         </HBox>
         <HBox layoutY="20.0" prefHeight="442.0" prefWidth="702.0">
             <children>
-                <ListView fx:id="userView" onContextMenuRequested="#contextMenuOverUser" prefHeight="478.0" prefWidth="300.0" />
+            <TableView fx:id="userTable" onContextMenuRequested="#contextMenuOverUser" prefHeight="442.0" prefWidth="300.0">
+              <columns>
+                <TableColumn fx:id="userFileNames" prefWidth="75.0" text="Name" />
+                <TableColumn fx:id="userFileSizes" prefWidth="75.0" text="Size" />
+              </columns>
+               <columnResizePolicy>
+                  <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+               </columnResizePolicy>
+            </TableView>
                 <VBox alignment="CENTER" prefHeight="478.0" prefWidth="102.0">
                     <children>
                         <Button fx:id="fromUserButton" mnemonicParsing="false" onAction="#fromUser" text="-&gt;" />
@@ -44,7 +52,15 @@
                         <Button fx:id="fromServerButton" mnemonicParsing="false" onAction="#fromServer" text="&lt;-" />
                     </children>
                 </VBox>
-                <ListView fx:id="serverView" onContextMenuRequested="#contextMenuOverServer" prefHeight="478.0" prefWidth="300.0" />
+            <TableView fx:id="serverTable" onContextMenuRequested="#contextMenuOverServer" prefHeight="442.0" prefWidth="300.0">
+              <columns>
+                <TableColumn fx:id="serverFileNames" prefWidth="75.0" text="Name" />
+                <TableColumn fx:id="serverFileSizes" prefWidth="75.0" text="Size" />
+              </columns>
+               <columnResizePolicy>
+                  <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+               </columnResizePolicy>
+            </TableView>
             </children>
         </HBox>
         <ListView fx:id="leftNameplate" layoutY="462.0" prefHeight="26.0" prefWidth="300.0" />

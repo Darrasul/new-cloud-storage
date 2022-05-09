@@ -8,12 +8,18 @@ import java.util.List;
 public class ListMessage extends AbstractMessage{
 
     private final List<String> files;
+    private Path path;
 
     public ListMessage(Path path) throws IOException {
+        this.path = path;
         files = Files.list(path)
                 .map(Path::getFileName)
                 .map(Path::toString)
                 .toList();
+    }
+
+    public Path getPath() {
+        return path;
     }
 
     public List<String> getFiles() {
