@@ -12,6 +12,7 @@ module com.buzas.cloud.application {
     requires com.almasb.fxgl.all;
     requires io.netty.codec;
 
+    opens com.buzas.cloud.application.model to  javafx.base;
     opens com.buzas.cloud.application.controllers to javafx.fxml;
     exports com.buzas.cloud.application;
 }

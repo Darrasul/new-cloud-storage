@@ -2,14 +2,15 @@ package com.buzas.cloud.application.controllers;
 
 import com.buzas.cloud.application.ClientApp;
 import com.buzas.cloud.application.dialogs.Dialogs;
+import com.buzas.cloud.application.model.TableItem;
 import com.buzas.cloud.application.model.*;
 import com.buzas.cloud.application.network.ClientNetwork;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.layout.TilePane;
 
 import java.io.Closeable;
 import java.io.File;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -28,8 +30,16 @@ public class ClientController implements Initializable, Closeable {
     public ListView<String> leftNameplate;
     public ListView<String> rightNameplate;
     private ClientNetwork clientNetwork;
-    public ListView<String> userView;
-    public ListView<String> serverView;
+
+//    public ListView serverView;
+    public TableView<TableItem> userTable;
+    public TableView<TableItem> serverTable;
+    public TableColumn<TableItem, String> userFileNames;
+    public TableColumn<TableItem, String> userFileSizes;
+    public TableColumn<TableItem, String> serverFileNames;
+    public TableColumn<TableItem, String> serverFileSizes;
+    private TableView.TableViewSelectionModel<TableItem> userSelectionModel;
+    private TableView.TableViewSelectionModel<TableItem> serverSelectionModel;
 
     Label userLabel = new Label();
     ContextMenu userMenu = new ContextMenu();
@@ -63,9 +73,24 @@ public class ClientController implements Initializable, Closeable {
                 }
                 if (message instanceof ListMessage listMessage){
                     System.out.println("read messages");
-                    serverView.getItems().clear();
-                    serverView.getItems().add("..");
-                    serverView.getItems().addAll(listMessage.getFiles());
+                    List<String> itemsNames = listMessage.getFileNames();
+                    List<String> itemsSizes = listMessage.getFileSizes();
+                    List<TableItem> items = new ArrayList<>(0);
+                    for (int i = 0; i < itemsNames.size(); i++) {
+                        for (int j = 0; j < itemsSizes.size(); j++) {
+                            if (i == j){
+                                items.add(new TableItem(itemsNames.get(i), itemsSizes.get(j)));
+                            }
+                        }
+                    }
+                    serverTable.getItems().clear();
+                    serverTable.getItems().add(new TableItem("..", ""));
+                    serverTable.getItems().addAll(items);
+                    rightNameplate.getItems().clear();
+                    rightNameplate.getItems().add(serverDirectory.toString());
+//                    serverView.getItems().clear();
+//                    serverView.getItems().add("..");
+//                    serverView.getItems().addAll(listMessage.getFiles());
                 }
                 if (message instanceof DeliverMessage deliverMessage){
                     System.out.println("deliver file");
@@ -83,7 +108,8 @@ public class ClientController implements Initializable, Closeable {
                 if (message instanceof DirectoryAnswerMessage answerMessage){
                     if (answerMessage.isDirectory()){
                         serverDirectory = serverDirectory.resolve(answerMessage.getName());
-                        serverView.getItems().clear();
+                        serverTable.getItems().clear();
+//                        serverView.getItems().clear();
                         clientNetwork.write(new RefreshMessage());
                     } else {
                         System.out.println("Not a directory. Да, оно и здесь не дает использовать окно ошибки. Опять не видит сцену");
@@ -106,17 +132,26 @@ public class ClientController implements Initializable, Closeable {
         }
     }
 
-    private List<String> receiveUserFilesNames() throws IOException {
-        return Files.list(clientDirectory)
+    private List<TableItem> receiveUserFiles() throws IOException {
+        List<String> names = Files.list(clientDirectory)
                 .map(Path::getFileName)
                 .map(Path::toString)
                 .toList();
+        List<TableItem> files = new ArrayList<>(0);
+        for (String name : names) {
+            String size = String.valueOf(Files.size(clientDirectory.resolve(name)));
+            files.add(new TableItem(name, size));
+        }
+        return files;
     }
 
     private void readUserFiles() throws IOException {
-        userView.getItems().clear();
-        userView.getItems().add("..");
-        userView.getItems().addAll(receiveUserFilesNames());
+        userTable.getItems().clear();
+        userTable.getItems().add(new TableItem("..", ""));
+        userTable.getItems().addAll(receiveUserFiles());
+//        userView.getItems().clear();
+//        userView.getItems().add("..");
+//        userView.getItems().addAll(receiveUserFilesNames());
     }
 
     private void signUpNameplates() {
@@ -129,9 +164,22 @@ public class ClientController implements Initializable, Closeable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         try {
-            signUpNameplates();
             clientDirectory = Path.of("cloud-application","userFiles");
             clientNetwork = new ClientNetwork();
+            signUpNameplates();
+
+            userFileNames.setCellValueFactory(new PropertyValueFactory<>("name"));
+            userFileSizes.setCellValueFactory(new PropertyValueFactory<>("size"));
+            serverFileNames.setCellValueFactory(new PropertyValueFactory<>("name"));
+            serverFileSizes.setCellValueFactory(new PropertyValueFactory<>("size"));
+
+            userSelectionModel = userTable.getSelectionModel();
+            serverSelectionModel = serverTable.getSelectionModel();
+            userSelectionModel.setSelectionMode(SelectionMode.SINGLE);
+            serverSelectionModel.setSelectionMode(SelectionMode.SINGLE);
+
+            serverTable.getItems().clear();
+            serverTable.getItems().add(new TableItem("..", ""));
             readUserFiles();
             Thread.sleep(300);
             Thread commandReadThread = new Thread(this::readCommands);
@@ -194,7 +242,7 @@ public class ClientController implements Initializable, Closeable {
 
     private void openServerFolder(String target) throws IOException {
         if (target.equals("..")){
-            clientNetwork.write(new DirectoryRequestMessage(".."));
+            clientNetwork.write(new DirectoryRequestMessage("../cloud-server/cloudFiles"));
         }
         Path targetPath = serverDirectory.resolve(target);
         clientNetwork.write(new DirectoryRequestMessage(targetPath));
@@ -211,7 +259,7 @@ public class ClientController implements Initializable, Closeable {
     }
 
     public void fromUser(ActionEvent actionEvent) throws Exception {
-        String fileName = userView.getSelectionModel().getSelectedItem();
+        String fileName = userSelectionModel.getSelectedItem().getName();
         Path filePath = clientDirectory.resolve(fileName);
         if (!Files.isDirectory(filePath)){
             clientNetwork.write(new FileMessage(filePath));
@@ -221,7 +269,7 @@ public class ClientController implements Initializable, Closeable {
     }
 
     public void fromServer(ActionEvent actionEvent) throws Exception {
-        String serverFile = serverView.getSelectionModel().getSelectedItem();
+        String serverFile = serverSelectionModel.getSelectedItem().getName();
         Path serverFilePath = Path.of(serverFile);
         clientNetwork.download(new DownloadMessage(serverDirectory.resolve(serverFilePath)));
     }
@@ -232,12 +280,12 @@ public class ClientController implements Initializable, Closeable {
     }
 
     public void pressDeleteUserFile(ActionEvent actionEvent) throws IOException {
-        String userFile = userView.getSelectionModel().getSelectedItem();
+        String userFile = userSelectionModel.getSelectedItem().getName();
         deleteUserFiles(userFile);
     }
 
     public void pressDeleteServerFile(ActionEvent actionEvent) throws IOException {
-        String serverFile = serverView.getSelectionModel().getSelectedItem();
+        String serverFile = serverSelectionModel.getSelectedItem().getName();
         deleteServerFile(serverFile);
     }
 
@@ -257,12 +305,12 @@ public class ClientController implements Initializable, Closeable {
     }
 
     public void pressedUserFileInfo(ActionEvent actionEvent) throws IOException {
-        String fileToRead = userView.getSelectionModel().getSelectedItem();
+        String fileToRead = userSelectionModel.getSelectedItem().getName();
         userInfoShow(fileToRead);
     }
 
     public void pressedServerFileInfo(ActionEvent actionEvent) throws IOException {
-        String fileToRead = serverView.getSelectionModel().getSelectedItem();
+        String fileToRead = serverSelectionModel.getSelectedItem().getName();
         serverInfoShow(fileToRead);
     }
 
@@ -300,17 +348,17 @@ public class ClientController implements Initializable, Closeable {
     }
 
     public void pressUserFolder(ActionEvent actionEvent) throws IOException {
-        String target = userView.getSelectionModel().getSelectedItem();
+        String target = userSelectionModel.getSelectedItem().getName();
         openUserFolder(target);
     }
 
     public void pressServerFolder(ActionEvent actionEvent) throws IOException {
-        String target = serverView.getSelectionModel().getSelectedItem();
+        String target = serverSelectionModel.getSelectedItem().getName();
         openServerFolder(target);
     }
 
     public void contextMenuOverUser(ContextMenuEvent contextMenuEvent) {
-        String selectedItem = userView.getSelectionModel().getSelectedItem();
+        String selectedItem = userSelectionModel.getSelectedItem().getName();
         userGetInfo.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
@@ -359,11 +407,11 @@ public class ClientController implements Initializable, Closeable {
 
         userLabel.setContextMenu(userMenu);
         userMenu.getItems().addAll(userGetInfo, userOpenFolder, userDeleteFile, userRefresh);
-        userView.setContextMenu(userMenu);
+        userTable.setContextMenu(userMenu);
     }
 
     public void contextMenuOverServer(ContextMenuEvent contextMenuEvent) {
-        String selectedItem = serverView.getSelectionModel().getSelectedItem();
+        String selectedItem = serverSelectionModel.getSelectedItem().getName();
         serverGetInfo.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
@@ -410,6 +458,6 @@ public class ClientController implements Initializable, Closeable {
         });
         serverLabel.setContextMenu(serverMenu);
         serverMenu.getItems().addAll(serverGetInfo, serverOpenFolder, serverDeleteFile, serverRefresh);
-        serverView.setContextMenu(serverMenu);
+        serverTable.setContextMenu(serverMenu);
     }
 }
