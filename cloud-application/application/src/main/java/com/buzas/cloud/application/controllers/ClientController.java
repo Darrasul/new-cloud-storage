@@ -2,6 +2,7 @@ package com.buzas.cloud.application.controllers;
 
 import com.buzas.cloud.application.ClientApp;
 import com.buzas.cloud.application.dialogs.Dialogs;
+import com.buzas.cloud.application.model.TableItem;
 import com.buzas.cloud.application.model.*;
 import com.buzas.cloud.application.network.ClientNetwork;
 import javafx.event.ActionEvent;
@@ -30,6 +31,7 @@ public class ClientController implements Initializable, Closeable {
     public ListView<String> rightNameplate;
     private ClientNetwork clientNetwork;
 
+//    public ListView serverView;
     public TableView<TableItem> userTable;
     public TableView<TableItem> serverTable;
     public TableColumn<TableItem, String> userFileNames;
@@ -71,15 +73,21 @@ public class ClientController implements Initializable, Closeable {
                 }
                 if (message instanceof ListMessage listMessage){
                     System.out.println("read messages");
-                    List<String> names = listMessage.getFiles();
+                    List<String> itemsNames = listMessage.getFileNames();
+                    List<String> itemsSizes = listMessage.getFileSizes();
                     List<TableItem> items = new ArrayList<>(0);
-                    for (String name : names) {
-                        String size = String.valueOf(Files.size(listMessage.getPath().resolve(name)));
-                        items.add(new TableItem(name, size));
+                    for (int i = 0; i < itemsNames.size(); i++) {
+                        for (int j = 0; j < itemsSizes.size(); j++) {
+                            if (i == j){
+                                items.add(new TableItem(itemsNames.get(i), itemsSizes.get(j)));
+                            }
+                        }
                     }
                     serverTable.getItems().clear();
                     serverTable.getItems().add(new TableItem("..", ""));
                     serverTable.getItems().addAll(items);
+                    rightNameplate.getItems().clear();
+                    rightNameplate.getItems().add(serverDirectory.toString());
 //                    serverView.getItems().clear();
 //                    serverView.getItems().add("..");
 //                    serverView.getItems().addAll(listMessage.getFiles());
@@ -101,6 +109,7 @@ public class ClientController implements Initializable, Closeable {
                     if (answerMessage.isDirectory()){
                         serverDirectory = serverDirectory.resolve(answerMessage.getName());
                         serverTable.getItems().clear();
+//                        serverView.getItems().clear();
                         clientNetwork.write(new RefreshMessage());
                     } else {
                         System.out.println("Not a directory. Да, оно и здесь не дает использовать окно ошибки. Опять не видит сцену");
@@ -233,7 +242,7 @@ public class ClientController implements Initializable, Closeable {
 
     private void openServerFolder(String target) throws IOException {
         if (target.equals("..")){
-            clientNetwork.write(new DirectoryRequestMessage(".."));
+            clientNetwork.write(new DirectoryRequestMessage("../cloud-server/cloudFiles"));
         }
         Path targetPath = serverDirectory.resolve(target);
         clientNetwork.write(new DirectoryRequestMessage(targetPath));

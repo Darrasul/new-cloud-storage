@@ -52,6 +52,7 @@
                         <Button fx:id="fromServerButton" mnemonicParsing="false" onAction="#fromServer" text="&lt;-" />
                     </children>
                 </VBox>
+<!--            <ListView fx:id="serverView" onContextMenuRequested="#contextMenuOverServer" prefHeight="442.0" prefWidth="303.0" />-->
             <TableView fx:id="serverTable" onContextMenuRequested="#contextMenuOverServer" prefHeight="442.0" prefWidth="300.0">
               <columns>
                 <TableColumn fx:id="serverFileNames" prefWidth="75.0" text="Name" />
