@@ -32,7 +32,7 @@ public class FileHandler extends SimpleChannelInboundHandler<AbstractMessage> {
             ctx.write(new ListMessage(serverDirectory));
         }
         if (message instanceof DownloadMessage downloadMessage){
-            Path downloadedFilePath = Path.of(serverDirectory.resolve(downloadMessage.getName()).toString());
+            Path downloadedFilePath = serverDirectory.resolve(downloadMessage.getName());
             if (!Files.isDirectory(downloadedFilePath)){
                 if (Files.exists(downloadedFilePath)) {
                     ctx.write(new DeliverMessage(downloadedFilePath));
@@ -49,7 +49,10 @@ public class FileHandler extends SimpleChannelInboundHandler<AbstractMessage> {
         }
         if (message instanceof DirectoryRequestMessage requestMessage){
             Path targetPath = serverDirectory.resolve(requestMessage.getName());
-            if (Files.isDirectory(targetPath)){
+            if (requestMessage.getName().equals("..")){
+                serverDirectory = Path.of("cloud-server/cloudFiles");
+                ctx.write(new DirectoryAnswerMessage(true, serverDirectory));
+            } else if (Files.isDirectory(targetPath)){
                 serverDirectory = targetPath;
                 ctx.write(new DirectoryAnswerMessage(true, Path.of(requestMessage.getName())));
             } else {
