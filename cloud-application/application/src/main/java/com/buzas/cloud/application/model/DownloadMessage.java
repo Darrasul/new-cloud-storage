@@ -8,8 +8,8 @@ public class DownloadMessage extends AbstractMessage{
 
     private String name;
 
-    public DownloadMessage(Path path) throws IOException {
-        name = path.getFileName().toString();
+    public DownloadMessage(String name) throws IOException {
+        this.name = name;
     }
 
     public String getName() {

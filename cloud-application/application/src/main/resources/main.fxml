@@ -39,7 +39,7 @@
             <TableView fx:id="userTable" onContextMenuRequested="#contextMenuOverUser" prefHeight="442.0" prefWidth="300.0">
               <columns>
                 <TableColumn fx:id="userFileNames" prefWidth="75.0" text="Name" />
-                <TableColumn fx:id="userFileSizes" prefWidth="75.0" text="Size" />
+                <TableColumn fx:id="userFileSizes" prefWidth="75.0" text="Size(bytes)" />
               </columns>
                <columnResizePolicy>
                   <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -56,7 +56,7 @@
             <TableView fx:id="serverTable" onContextMenuRequested="#contextMenuOverServer" prefHeight="442.0" prefWidth="300.0">
               <columns>
                 <TableColumn fx:id="serverFileNames" prefWidth="75.0" text="Name" />
-                <TableColumn fx:id="serverFileSizes" prefWidth="75.0" text="Size" />
+                <TableColumn fx:id="serverFileSizes" prefWidth="75.0" text="Size(bytes)" />
               </columns>
                <columnResizePolicy>
                   <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

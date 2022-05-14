@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class ClientController implements Initializable, Closeable {
-
-    private Path serverDirectory = Path.of("../cloud-server/cloudFiles");
     private Path clientDirectory;
     private ClientApp application;
     public ListView<String> leftNameplate;
@@ -86,8 +84,6 @@ public class ClientController implements Initializable, Closeable {
                     serverTable.getItems().clear();
                     serverTable.getItems().add(new TableItem("..", ""));
                     serverTable.getItems().addAll(items);
-                    rightNameplate.getItems().clear();
-                    rightNameplate.getItems().add(serverDirectory.toString());
 //                    serverView.getItems().clear();
 //                    serverView.getItems().add("..");
 //                    serverView.getItems().addAll(listMessage.getFiles());
@@ -107,12 +103,15 @@ public class ClientController implements Initializable, Closeable {
                 }
                 if (message instanceof DirectoryAnswerMessage answerMessage){
                     if (answerMessage.isDirectory()){
-                        serverDirectory = serverDirectory.resolve(answerMessage.getName());
+                        rightNameplate.getItems().clear();
+                        rightNameplate.getItems().add(answerMessage.getName());
+
                         serverTable.getItems().clear();
-//                        serverView.getItems().clear();
                         clientNetwork.write(new RefreshMessage());
                     } else {
                         System.out.println("Not a directory. Да, оно и здесь не дает использовать окно ошибки. Опять не видит сцену");
+                        rightNameplate.getItems().clear();
+                        rightNameplate.getItems().add("Not a directory");
 //                        Dialogs.ErrorDialog.NOT_A_DIRECTORY.show();
                     }
                 }
@@ -178,6 +177,13 @@ public class ClientController implements Initializable, Closeable {
             userSelectionModel.setSelectionMode(SelectionMode.SINGLE);
             serverSelectionModel.setSelectionMode(SelectionMode.SINGLE);
 
+            userLabel.setContextMenu(userMenu);
+            userMenu.getItems().addAll(userGetInfo, userOpenFolder, userDeleteFile, userRefresh);
+            userTable.setContextMenu(userMenu);
+            serverLabel.setContextMenu(serverMenu);
+            serverMenu.getItems().addAll(serverGetInfo, serverOpenFolder, serverDeleteFile, serverRefresh);
+            serverTable.setContextMenu(serverMenu);
+
             serverTable.getItems().clear();
             serverTable.getItems().add(new TableItem("..", ""));
             readUserFiles();
@@ -242,10 +248,10 @@ public class ClientController implements Initializable, Closeable {
 
     private void openServerFolder(String target) throws IOException {
         if (target.equals("..")){
-            clientNetwork.write(new DirectoryRequestMessage("../cloud-server/cloudFiles"));
+            clientNetwork.write(new DirectoryRequestMessage(".."));
+        } else {
+            clientNetwork.write(new DirectoryRequestMessage(target));
         }
-        Path targetPath = serverDirectory.resolve(target);
-        clientNetwork.write(new DirectoryRequestMessage(targetPath));
     }
 
     private void deleteServerFile(String serverFile) throws IOException {
@@ -270,8 +276,7 @@ public class ClientController implements Initializable, Closeable {
 
     public void fromServer(ActionEvent actionEvent) throws Exception {
         String serverFile = serverSelectionModel.getSelectedItem().getName();
-        Path serverFilePath = Path.of(serverFile);
-        clientNetwork.download(new DownloadMessage(serverDirectory.resolve(serverFilePath)));
+        clientNetwork.download(new DownloadMessage(serverFile));
     }
 
     public void pressExitButton(ActionEvent actionEvent) throws IOException {
@@ -332,6 +337,8 @@ public class ClientController implements Initializable, Closeable {
         }
         if (tagFromServer) {
             System.out.println("Тут должна быть ошибка. То есть она есть");
+            rightNameplate.getItems().clear();
+            rightNameplate.getItems().add("Its a server file");
 //            String TYPE = "This is from server";
 //            showDialog(Alert.AlertType.INFORMATION, TITLE, TYPE, message);
         }
@@ -404,10 +411,6 @@ public class ClientController implements Initializable, Closeable {
                 }
             }
         });
-
-        userLabel.setContextMenu(userMenu);
-        userMenu.getItems().addAll(userGetInfo, userOpenFolder, userDeleteFile, userRefresh);
-        userTable.setContextMenu(userMenu);
     }
 
     public void contextMenuOverServer(ContextMenuEvent contextMenuEvent) {
@@ -456,8 +459,5 @@ public class ClientController implements Initializable, Closeable {
                 }
             }
         });
-        serverLabel.setContextMenu(serverMenu);
-        serverMenu.getItems().addAll(serverGetInfo, serverOpenFolder, serverDeleteFile, serverRefresh);
-        serverTable.setContextMenu(serverMenu);
     }
 }
