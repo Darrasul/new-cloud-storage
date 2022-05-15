@@ -59,6 +59,15 @@ public class FileHandler extends SimpleChannelInboundHandler<AbstractMessage> {
                 ctx.write(new DirectoryAnswerMessage(false, serverDirectory));
             }
         }
+        if (message instanceof RenameRequestMessage requestMessage){
+            Path oldPath = serverDirectory.resolve(requestMessage.getOldName());
+            Files.move(oldPath, oldPath.resolveSibling(requestMessage.getNewName()));
+            if (Files.exists(serverDirectory.resolve(requestMessage.getNewName()))){
+                ctx.write(new RenameAnswerMessage(true));
+            } else {
+                ctx.write(new RenameAnswerMessage(false));
+            }
+        }
         ctx.flush();
     }
 }

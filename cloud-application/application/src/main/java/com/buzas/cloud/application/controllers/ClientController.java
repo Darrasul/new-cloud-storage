@@ -10,6 +10,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.ContextMenuEvent;
 
 import java.io.Closeable;
@@ -28,6 +29,7 @@ public class ClientController implements Initializable, Closeable {
     public ListView<String> leftNameplate;
     public ListView<String> rightNameplate;
     private ClientNetwork clientNetwork;
+    private String oldNameOfServerFile;
 
 //    public ListView serverView;
     public TableView<TableItem> userTable;
@@ -63,10 +65,14 @@ public class ClientController implements Initializable, Closeable {
                     String error = ((DownloadErrorMessage) message).getMessage();
                     if (error.equals("Its a directory, you can't copy it")){
                         System.out.println(error);
+                        Tooltip tip = new Tooltip(error);
+                        serverTable.setTooltip(tip);
                     }
                     if (error.equals("No such file in a server")){
                         System.out.println(error);
-                        Dialogs.ErrorDialog.DOWNLOADING_FILES_ERROR.show();
+                        Tooltip tip = new Tooltip(error);
+                        serverTable.setTooltip(tip);
+//                        Dialogs.ErrorDialog.DOWNLOADING_FILES_ERROR.show();
                     }
                 }
                 if (message instanceof ListMessage listMessage){
@@ -84,9 +90,6 @@ public class ClientController implements Initializable, Closeable {
                     serverTable.getItems().clear();
                     serverTable.getItems().add(new TableItem("..", ""));
                     serverTable.getItems().addAll(items);
-//                    serverView.getItems().clear();
-//                    serverView.getItems().add("..");
-//                    serverView.getItems().addAll(listMessage.getFiles());
                 }
                 if (message instanceof DeliverMessage deliverMessage){
                     System.out.println("deliver file");
@@ -122,7 +125,24 @@ public class ClientController implements Initializable, Closeable {
                     String fileLastUpdateFull = infoDeliverMessage.getFileLastUpdateFull();
                     String fileLastUpdateDate = fileLastUpdateFull.substring(0, 10);
                     String fileLastUpdateHour = fileLastUpdateFull.substring(12, 19);
-                    infoDialogInit(fileToRead, filePath, fileSize, fileLastUpdateDate, fileLastUpdateHour, true);
+                    Tooltip tip = new Tooltip(
+                            "Name is " + fileToRead + "\n" +
+                                    "Path is " + filePath + "\n" +
+                                    "Size is " + fileSize + " bytes\n" +
+                                    "Last update " + fileLastUpdateHour + " of " + fileLastUpdateDate
+                    );
+                    serverTable.setTooltip(tip);
+//                    infoDialogInit(fileToRead, filePath, fileSize, fileLastUpdateDate, fileLastUpdateHour, true);
+                }
+                if (message instanceof RenameAnswerMessage answerMessage){
+                    if (answerMessage.isSuccess()){
+                        rightNameplate.getItems().clear();
+                        rightNameplate.getItems().add("Rename of " + oldNameOfServerFile + " is successful");
+                    } else {
+                        clientNetwork.write(new RefreshMessage());
+                        rightNameplate.getItems().clear();
+                        rightNameplate.getItems().add("Rename of " + oldNameOfServerFile + " is failure");
+                    }
                 }
             }
         } catch (Exception e) {
@@ -148,9 +168,6 @@ public class ClientController implements Initializable, Closeable {
         userTable.getItems().clear();
         userTable.getItems().add(new TableItem("..", ""));
         userTable.getItems().addAll(receiveUserFiles());
-//        userView.getItems().clear();
-//        userView.getItems().add("..");
-//        userView.getItems().addAll(receiveUserFilesNames());
     }
 
     private void signUpNameplates() {
@@ -183,6 +200,50 @@ public class ClientController implements Initializable, Closeable {
             serverLabel.setContextMenu(serverMenu);
             serverMenu.getItems().addAll(serverGetInfo, serverOpenFolder, serverDeleteFile, serverRefresh);
             serverTable.setContextMenu(serverMenu);
+
+            userTable.setEditable(true);
+            userFileNames.setCellFactory(TextFieldTableCell.<TableItem>forTableColumn());
+            userFileNames.setOnEditCommit((TableColumn.CellEditEvent<TableItem, String> event) -> {
+                TablePosition<TableItem, String> position = event.getTablePosition();
+                String newName = event.getNewValue();
+                String oldName = event.getOldValue();
+                int row = position.getRow();
+                TableItem item = event.getTableView().getItems().get(row);
+
+                Path path = clientDirectory.resolve(newName);
+                if (Files.exists(path)){
+                    Dialogs.ErrorDialog.NAME_ALREADY_EXISTS.show();
+                    item.setName(oldName);
+                } else {
+                    item.setName(newName);
+                    try {
+                        Files.move(clientDirectory.resolve(oldName),
+                                clientDirectory.resolve(oldName).resolveSibling(newName));
+                    } catch (IOException e) {
+                        System.err.println("Something wrong with renaming user file");
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+            serverTable.setEditable(true);
+            serverFileNames.setCellFactory(TextFieldTableCell.<TableItem>forTableColumn());
+            serverFileNames.setOnEditCommit((TableColumn.CellEditEvent<TableItem, String> event) -> {
+                TablePosition<TableItem, String> position = event.getTablePosition();
+                String newName = event.getNewValue();
+                String oldName = event.getOldValue();
+                int row = position.getRow();
+                TableItem item = event.getTableView().getItems().get(row);
+                item.setName(newName);
+                oldNameOfServerFile = oldName;
+                try {
+                    clientNetwork.write(new RenameRequestMessage(oldName, newName));
+                } catch (IOException e) {
+                    item.setName(oldName);
+                    System.err.println("Cant send rename command");
+                    e.printStackTrace();
+                }
+            });
 
             serverTable.getItems().clear();
             serverTable.getItems().add(new TableItem("..", ""));

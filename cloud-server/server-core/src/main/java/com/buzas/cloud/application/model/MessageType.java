@@ -11,7 +11,9 @@ public enum MessageType {
     FILE_INFO("file_info"),
     INFO_DELIVER("info_deliver"),
     DIRECTORY_REQUEST("directory_request"),
-    DIRECTORY_ANSWER("directory_answer");
+    DIRECTORY_ANSWER("directory_answer"),
+    RENAME_REQUEST("rename_request"),
+    RENAME_ANSWER("rename_answer");
 
     private final String name;
 

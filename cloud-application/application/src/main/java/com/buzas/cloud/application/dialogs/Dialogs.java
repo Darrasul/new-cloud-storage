@@ -24,7 +24,8 @@ public class Dialogs {
     public enum ErrorDialog {
         DOWNLOADING_FILES_ERROR("Error with downloading files from server"),
         NOT_A_DIRECTORY("Selected item is not a directory"),
-        CANT_COPY_DIRECTORY("You cant copy directory");
+        CANT_COPY_DIRECTORY("You cant copy directory"),
+        NAME_ALREADY_EXISTS("File with this name already exists");
 
         private static final String TITLE = "Error!";
         private static final String TYPE = TITLE;
