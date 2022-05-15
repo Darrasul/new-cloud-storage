@@ -19,6 +19,10 @@ public class TableItem {
         this.size = size;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getName() {
         return name;
     }
