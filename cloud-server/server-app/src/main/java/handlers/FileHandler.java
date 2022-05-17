@@ -50,13 +50,16 @@ public class FileHandler extends SimpleChannelInboundHandler<AbstractMessage> {
         if (message instanceof DirectoryRequestMessage requestMessage){
             Path targetPath = serverDirectory.resolve(requestMessage.getName());
             if (requestMessage.getName().equals("..")){
-                serverDirectory = Path.of("cloud-server/cloudFiles");
-                ctx.write(new DirectoryAnswerMessage(true, serverDirectory));
+                if (serverDirectory.equals(Path.of("cloud-server/cloudFiles"))){
+                    ctx.write(new DirectoryAnswerMessage(true, serverDirectory, true));
+                }
+                serverDirectory = targetPath;
+                ctx.write(new DirectoryAnswerMessage(true, serverDirectory, false));
             } else if (Files.isDirectory(targetPath)){
                 serverDirectory = targetPath;
-                ctx.write(new DirectoryAnswerMessage(true, Path.of(requestMessage.getName())));
+                ctx.write(new DirectoryAnswerMessage(true, serverDirectory, false));
             } else {
-                ctx.write(new DirectoryAnswerMessage(false, serverDirectory));
+                ctx.write(new DirectoryAnswerMessage(false, serverDirectory, false));
             }
         }
         if (message instanceof RenameRequestMessage requestMessage){

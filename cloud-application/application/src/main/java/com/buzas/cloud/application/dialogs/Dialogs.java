@@ -6,7 +6,7 @@ import javafx.scene.control.Alert;
 public class Dialogs {
 
     public enum AboutDialog {
-        UPDATE("Last update: 10.05.22");
+        UPDATE("Last update: 17.05.22");
 
         private final String message;
         private static final String TITLE = "Program info";

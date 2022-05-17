@@ -25,6 +25,7 @@ import java.util.ResourceBundle;
 
 public class ClientController implements Initializable, Closeable {
     private Path clientDirectory;
+    private boolean isMainServerDir = true;
     private ClientApp application;
     public ListView<String> leftNameplate;
     public ListView<String> rightNameplate;
@@ -88,7 +89,9 @@ public class ClientController implements Initializable, Closeable {
                         }
                     }
                     serverTable.getItems().clear();
-                    serverTable.getItems().add(new TableItem("..", ""));
+                    if (!isMainServerDir){
+                        serverTable.getItems().add(new TableItem("..", ""));
+                    }
                     serverTable.getItems().addAll(items);
                 }
                 if (message instanceof DeliverMessage deliverMessage){
@@ -106,6 +109,7 @@ public class ClientController implements Initializable, Closeable {
                 }
                 if (message instanceof DirectoryAnswerMessage answerMessage){
                     if (answerMessage.isDirectory()){
+                        isMainServerDir = answerMessage.isMain();
                         rightNameplate.getItems().clear();
                         rightNameplate.getItems().add(answerMessage.getName());
 
@@ -174,7 +178,7 @@ public class ClientController implements Initializable, Closeable {
         leftNameplate.getItems().clear();
         rightNameplate.getItems().clear();
         leftNameplate.getItems().add("User");
-        rightNameplate.getItems().add("Server");
+        rightNameplate.getItems().add("cloudFiles");
     }
 
     @Override
@@ -246,7 +250,7 @@ public class ClientController implements Initializable, Closeable {
             });
 
             serverTable.getItems().clear();
-            serverTable.getItems().add(new TableItem("..", ""));
+//            serverTable.getItems().add(new TableItem("..", ""));
             readUserFiles();
             Thread.sleep(300);
             Thread commandReadThread = new Thread(this::readCommands);
